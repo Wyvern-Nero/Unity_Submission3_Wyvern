@@ -9,6 +9,7 @@ TagManager:
   - TriggerStart
   - TriggerEnd
   - Killzone
+  - SafeZone
   layers:
   - Default
   - TransparentFX
