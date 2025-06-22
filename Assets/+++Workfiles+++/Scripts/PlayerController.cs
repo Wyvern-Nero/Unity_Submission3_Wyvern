@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,10 +14,15 @@ public class PlayerController : MonoBehaviour
     [Header("Player parts")]
     private Rigidbody2D rb;
     [SerializeField] private GameObject cameraTargetPlayer;
-    [SerializeField] private GameObject spriteIdle;
-    [SerializeField] private GameObject spriteRun;
-    [SerializeField] private GameObject spriteJump;
-    [SerializeField] private GameObject spriteJump2;
+    [SerializeField] private GameObject faceR;
+    [SerializeField] private GameObject faceL;
+    [SerializeField] private GameObject spriteIdleL;
+    [SerializeField] private GameObject spriteIdleR;
+    [SerializeField] private GameObject spriteRunL;
+    [SerializeField] private GameObject spriteRunR;
+    [SerializeField] private GameObject spriteJumpL;
+    [SerializeField] private GameObject spriteJumpR;
+    
     
     [Header("Groundcheck")]
     [SerializeField] private Transform groundCheck;
@@ -25,6 +31,7 @@ public class PlayerController : MonoBehaviour
     [Header("Manager")]
     [SerializeField] private UIManager uiManager;
     [SerializeField] private ScoreManager scoreManager;
+    [SerializeField] private AudioManager AudioManager;
     
     [Header("Debug - Don't touch")]
     [SerializeField] private float direction;
@@ -36,10 +43,13 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        faceR.SetActive(true);
+        spriteIdleR.SetActive(true);
     }
 
     void Update()
     {
+        #region Movement
         //player cannot move when false - used primarily for menus and countdown
         if (canMove)
         { 
@@ -51,16 +61,6 @@ public class PlayerController : MonoBehaviour
            
             //input times speed = motion
             rb.linearVelocity = new Vector2(direction * speed, rb.linearVelocity.y);
-            
-            // if direction below 0 face left | if direction above 0 face right
-            if (direction < 0)
-            {
-                transform.localScale = new Vector3(1f, 2, 1);
-            }
-            if (direction > 0)
-            {
-                transform.localScale = new Vector3(-1f, 2, 1);
-            }
            
             //jumping function. requires player to touch the ground or
             //when on the ground and jump isn't being pressed, disable double jump
@@ -95,6 +95,7 @@ public class PlayerController : MonoBehaviour
             if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+                AudioManager.PlayJumpSound();
             }
         }
         //if canMove = false, no more horizontal movement, stopping the player
@@ -102,6 +103,71 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
         }
+        #endregion
+        
+        #region Sprites
+        // if direction below 0 face left | if direction above 0 face right
+        if (direction < 0)
+        {
+            //this will enable the gameobject with the left facing sprites and disable the other
+            faceL.gameObject.SetActive(true);
+            faceR.gameObject.SetActive(false);
+        }
+        if (direction > 0)
+        {
+            //this will enable the gameobject with the right facing sprites and disable the other
+            faceL.gameObject.SetActive(false);
+            faceR.gameObject.SetActive(true);
+        }
+        
+        //enable idle sprite when not moving
+        if (direction == 0)
+        {
+            //enable idle sprites
+            spriteIdleL.SetActive(true);
+            spriteIdleR.SetActive(true);
+            
+            //disable running sprites
+            spriteRunL.SetActive(false);
+            spriteRunR.SetActive(false);
+            
+            //disable jumping sprites
+            spriteJumpL.SetActive(false);
+            spriteJumpR.SetActive(false);
+        }
+        //enable running sprite when moving
+        if (IsGrounded() && direction != 0)
+        {
+            //enable running sprites
+            spriteRunL.SetActive(true);
+            spriteRunR.SetActive(true);
+            
+            //disable idle sprites
+            spriteIdleL.SetActive(false);
+            spriteIdleR.SetActive(false);
+            
+            //disable jumping sprites
+            spriteJumpL.SetActive(false);
+            spriteJumpR.SetActive(false);
+        }
+        //enable jumoing sprite when in air
+        if (!IsGrounded())
+        {
+            //enable jumping sprites
+            spriteJumpL.SetActive(true);
+            spriteJumpR.SetActive(true);
+            
+            //disable idle sprites
+            spriteIdleL.SetActive(false);
+            spriteIdleR.SetActive(false);
+            
+            //disable running sprites
+            spriteRunL.SetActive(false);
+            spriteRunR.SetActive(false);
+        }
+        
+        #endregion
+        
     }
     
     #region collisions
@@ -120,6 +186,7 @@ public class PlayerController : MonoBehaviour
             Destroy(other.gameObject);
             uiManager.AddTarget();
             Debug.Log(message: "Trigger" + other.name);
+            AudioManager.PlayTargetSound();
 
         }
         //find secrets
@@ -128,6 +195,7 @@ public class PlayerController : MonoBehaviour
             Destroy(other.gameObject);
             uiManager.AddSecret();
             Debug.Log(message: "Trigger" + other.name);
+            AudioManager.PlaySecretSound();
 
         }
         //trigger that will cause a game over state upon contact. May also be used in moving enemies.
@@ -135,6 +203,7 @@ public class PlayerController : MonoBehaviour
         {
             uiManager.ShowLosePanel();
             Debug.Log(message: "Trigger" + other.name);
+            AudioManager.PlayDeathSound();
         }
         //trigger to start the countdown and moves player to starting line
         if (other.CompareTag("TriggerStart"))
