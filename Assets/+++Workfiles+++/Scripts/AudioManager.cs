@@ -2,19 +2,20 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    [SerializeField] private AudioSource deathSound;
+    //[SerializeField] private AudioSource deathSound;
     [SerializeField] private AudioSource jumpSound;
     [SerializeField] private AudioSource collectTargetSound;
     [SerializeField] private AudioSource collectSecretSounds;
 
     public void PlayDeathSound()
     {
-        deathSound.Play();
+        //deathSound.Play();
     }
 
     public void PlayJumpSound()
     {
         jumpSound.Play();
+        Debug.Log(message: "PlayJumpSound");
     }
     
     public void PlayTargetSound()

@@ -13,7 +13,7 @@ public class PlayerController : MonoBehaviour
     
     [Header("Player parts")]
     private Rigidbody2D rb;
-    [SerializeField] private GameObject cameraTargetPlayer;
+    [SerializeField] private GameObject cameraTarget;
     [SerializeField] private GameObject faceR;
     [SerializeField] private GameObject faceL;
     [SerializeField] private GameObject spriteIdleL;
@@ -96,6 +96,7 @@ public class PlayerController : MonoBehaviour
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
                 AudioManager.PlayJumpSound();
+                Debug.Log(message: "PlayJumpSound");
             }
         }
         //if canMove = false, no more horizontal movement, stopping the player
@@ -112,12 +113,16 @@ public class PlayerController : MonoBehaviour
             //this will enable the gameobject with the left facing sprites and disable the other
             faceL.gameObject.SetActive(true);
             faceR.gameObject.SetActive(false);
+            //change camera target position
+            cameraTarget.transform.localScale = new Vector2(2f, 1f);
         }
         if (direction > 0)
         {
             //this will enable the gameobject with the right facing sprites and disable the other
             faceL.gameObject.SetActive(false);
             faceR.gameObject.SetActive(true);
+            //change camera target position
+            cameraTarget.transform.localScale = new Vector2(-2f, 1f);
         }
         
         //enable idle sprite when not moving
