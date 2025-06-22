@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +10,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float speed;
     [SerializeField] private float jumpForce;
     
+    [Header("Player parts")]
     private Rigidbody2D rb;
+    [SerializeField] private GameObject cameraTargetPlayer;
+    [SerializeField] private GameObject spriteIdle;
+    [SerializeField] private GameObject spriteRun;
+    [SerializeField] private GameObject spriteJump;
+    [SerializeField] private GameObject spriteJump2;
     
     [Header("Groundcheck")]
     [SerializeField] private Transform groundCheck;
@@ -17,6 +24,7 @@ public class PlayerController : MonoBehaviour
     
     [Header("Manager")]
     [SerializeField] private UIManager uiManager;
+    [SerializeField] private ScoreManager scoreManager;
     
     [Header("Debug - Don't touch")]
     [SerializeField] private float direction;
@@ -32,6 +40,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        //player cannot move when false - used primarily for menus and countdown
         if (canMove)
         { 
             //Left = - | Right = +
@@ -80,7 +89,6 @@ public class PlayerController : MonoBehaviour
 
                     canDoubleJump = !canDoubleJump;
                 }
-                
             }
 
             //different jump strength dependent on length of input
@@ -89,12 +97,14 @@ public class PlayerController : MonoBehaviour
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
             }
         }
+        //if canMove = false, no more horizontal movement, stopping the player
         else
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
         }
     }
     
+    #region collisions
     //isGrounded - checks if GroundCheck object intersects with ground layer
     private bool IsGrounded()
     {
@@ -133,11 +143,17 @@ public class PlayerController : MonoBehaviour
             Debug.Log(message: "Trigger" + other.name);
 
         }
-        //trigger to end stopwatch and saves data data
+        //trigger to end stopwatch and calculate score
         if (other.CompareTag("TriggerEnd"))
         {
             uiManager.StopTimer();
             Debug.Log(message: "Trigger" + other.name);
         }
+
+        if (other.CompareTag("SafeZone"))
+        {
+            uiManager.LockHub();
+        }
     }
+    #endregion
 }

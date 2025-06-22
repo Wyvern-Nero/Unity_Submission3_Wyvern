@@ -2,14 +2,18 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Unity.Cinemachine;
 
 public class UIManager : MonoBehaviour
 {
     #region Input + Declarations
     
     //Panels
+    [Header("ScriptReferences")]
+    [SerializeField] private PlayerController player;
+    [SerializeField] private EndOfRun messenger;
+    
     [Header("Panels + Buttons")]
     [SerializeField] private GameObject StartPanel;
     [SerializeField] private GameObject GamePanel;
@@ -18,11 +22,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button StartButton;
 
     [Header("Objects + Position Targets")]
-    [SerializeField] private PlayerController player;
+    [SerializeField] private GameObject hubWall;
     [SerializeField] private GameObject target;
     [SerializeField] private GameObject collectible;
-    [SerializeField] private GameObject cameraTarget;
-    [SerializeField] private GameObject cameraPosition;
     [SerializeField] private GameObject teleportTarget;
     [SerializeField] private GameObject target1Position;
     [SerializeField] private GameObject target2Position;
@@ -44,43 +46,39 @@ public class UIManager : MonoBehaviour
     [SerializeField] private bool timerActive;
     [SerializeField] private float timer;
     [SerializeField] private TextMeshProUGUI textTimer;
-    [SerializeField] private float savedScore;
+    [SerializeField] public float tmpScore;
     
     //Collectibles
     [Header("Collectibles")]
-    [SerializeField] private int targetCounter = 5;
-    [SerializeField] private int secretCounter = 1;
+    [SerializeField] public int targetCounter;
+    [SerializeField] public int secretCounter;
     
     [SerializeField] private TextMeshProUGUI textTargetCount;
-    [SerializeField] private int savedTargetCount;
     [SerializeField] private TextMeshProUGUI textSecretCount;
-    [SerializeField] private int savedSecretCount;
     
     [Header("DeathTime")]
     [SerializeField] private float deathTime;
     [SerializeField] public bool resetWorld;
+    
+    [Header("Camera")]
+    [SerializeField] private GameObject camera;
+    //[SerializeField] private GameObject CineMachine;
+    [SerializeField] private GameObject cameraTarget;
+    [SerializeField] private GameObject cameraTargetPlayer;
+    [SerializeField] private GameObject cameraPosition;
     
     #endregion
     
     #region Start + Update
     private void Start()
     {
-        savedScore = PlayerPrefs.GetFloat("savedScore");
-        savedTargetCount = PlayerPrefs.GetInt("savedTargetCount");
-        savedSecretCount = PlayerPrefs.GetInt("savedSecretCount");
-        //ERASE ONCE TESTING IS DONE
-        //ERASE ONCE TESTING IS DONE
-        //ERASE ONCE TESTING IS DONE
-        savedScore = 0;
-        savedSecretCount = 0;
-        savedTargetCount = 0;
-        
         LoadGame();
         
         timer = 0;
         Countdown_obj.SetActive(false);
     }
-
+    
+    //contains timer + countdown function
     void Update()
     {
         //timer + countdown
@@ -138,6 +136,8 @@ public class UIManager : MonoBehaviour
         cameraOnPlayer();
         SpawnObjects();
         
+        hubWall.SetActive(false);
+        
         timer = 0;
         targetCounter = 0;
         UpdateTextTargetCount(targetCounter);
@@ -159,9 +159,10 @@ public class UIManager : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime(deathTime);
         HideUI();
+        player.transform.position = Vector3.zero;
+        timer = 0;
         targetCounter = 0;
         secretCounter = 0;
-        player.transform.position = Vector3.zero;
     }
     
     #endregion
@@ -195,13 +196,14 @@ public class UIManager : MonoBehaviour
         player.canMove = true;
     }
 
-    // stops timer and saves it as savedScore if lower than previous savedScore / also set camera position to level
+    // stops timer, set camera position to level, save time to tmpScore
     public void StopTimer()
     {
         timerActive = false;
         HideUI();
         cameraFixedPosition();
-        SaveScore();
+        tmpScore = timer;
+        messenger.endOfRun();
     }
     
     #endregion
@@ -228,21 +230,6 @@ public class UIManager : MonoBehaviour
         textSecretCount.text = newSecretCount.ToString();
     }
     #endregion
-    
-    #region Saving
-    private void SaveScore()
-    {
-        //savedScore = timer;
-        //PlayerPrefs.SetFloat("savedScore", savedScore);
-        //Debug.Log(message:"saving score = " + savedScore);
-        //savedTargetCount = targetCounter;
-        //PlayerPrefs.SetInt("targetCounter", targetCounter);
-        //Debug.Log(message:"saving targets = " + savedTargetCount);
-        //savedSecretCount = secretCounter;
-        //PlayerPrefs.SetInt("secretCounter", secretCounter);
-        //Debug.Log(message:"saving secrets = " + savedSecretCount);
-    }
-    #endregion
 
     #region Camera Target
 
@@ -251,13 +238,16 @@ public class UIManager : MonoBehaviour
     {
         cameraTarget.transform.SetParent(cameraPosition.transform);
         cameraTarget.transform.position = cameraPosition.transform.position;
+        //CineMachine.gameObject.SetActive(false);
+        camera.transform.position = new Vector3( 0, 3.5f, camera.transform.position.z);
     }
 
     //sets camera to player
     private void cameraOnPlayer()
     {
-        cameraTarget.transform.SetParent(player.transform);
-        cameraTarget.transform.position = player.transform.position;
+        cameraTarget.transform.SetParent(cameraTargetPlayer.transform);
+        cameraTarget.transform.position = cameraTargetPlayer.transform.position;
+        //CineMachine.gameObject.SetActive(true);
     }
 
     #endregion
@@ -275,5 +265,11 @@ public class UIManager : MonoBehaviour
         GameObject collectible1 = Instantiate(collectible); collectible1.transform.position = collectiblePosition.transform.position;
         resetWorld = true;
     }
+
+    public void LockHub()
+    {
+        hubWall.SetActive(true);
+    }
+    
     #endregion
 }
